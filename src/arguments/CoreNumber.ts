@@ -1,5 +1,6 @@
 import type { PieceContext } from '@sapphire/pieces';
 import { Identifiers } from '../lib/errors/Identifiers';
+import { resolveNumber } from '../lib/resolvers';
 import { Argument, ArgumentContext, ArgumentResult } from '../lib/structures/Argument';
 
 export class CoreArgument extends Argument<number> {
@@ -8,17 +9,10 @@ export class CoreArgument extends Argument<number> {
 	}
 
 	public run(parameter: string, context: ArgumentContext): ArgumentResult<number> {
-		const parsed = Number(parameter);
+		const resolved = resolveNumber(parameter, { minimum: context?.minimum, maximum: context?.maximum });
+		if (resolved.success) return this.ok(resolved.value);
 
-		if (Number.isNaN(parsed)) {
-			return this.error({
-				parameter,
-				message: 'The argument did not resolve to a valid number.',
-				context
-			});
-		}
-
-		if (typeof context.minimum === 'number' && parsed < context.minimum) {
+		if (resolved.error === Identifiers.ArgumentNumberTooSmall) {
 			return this.error({
 				parameter,
 				identifier: Identifiers.ArgumentNumberTooSmall,
@@ -27,15 +21,19 @@ export class CoreArgument extends Argument<number> {
 			});
 		}
 
-		if (typeof context.maximum === 'number' && parsed > context.maximum) {
+		if (resolved.error === Identifiers.ArgumentNumberTooBig) {
 			return this.error({
 				parameter,
 				identifier: Identifiers.ArgumentNumberTooBig,
-				message: `The argument must be smaller than ${context.maximum}.`,
+				message: `The argument must be less than ${context.maximum}.`,
 				context
 			});
 		}
 
-		return this.ok(parsed);
+		return this.error({
+			parameter,
+			message: resolved.error,
+			context
+		});
 	}
 }

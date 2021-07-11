@@ -1,8 +1,6 @@
 import type { PieceContext } from '@sapphire/pieces';
+import { resolveBoolean } from '../lib/resolvers';
 import { Argument, ArgumentContext, ArgumentResult } from '../lib/structures/Argument';
-
-const truths = ['1', 'true', '+', 't', 'yes', 'y'];
-const falses = ['0', 'false', '-', 'f', 'no', 'n'];
 
 export class CoreArgument extends Argument<boolean> {
 	public constructor(context: PieceContext) {
@@ -10,10 +8,8 @@ export class CoreArgument extends Argument<boolean> {
 	}
 
 	public run(parameter: string, context: ArgumentContext): ArgumentResult<boolean> {
-		const boolean = parameter.toLowerCase();
-		if (truths.includes(boolean)) return this.ok(true);
-		if (falses.includes(boolean)) return this.ok(false);
-
-		return this.error({ parameter, message: 'The argument did not resolve to a boolean.', context });
+		const resolved = resolveBoolean(parameter);
+		if (resolved.success) return this.ok(resolved.value);
+		return this.error({ parameter, message: resolved.error, context });
 	}
 }

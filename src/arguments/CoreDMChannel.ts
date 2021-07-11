@@ -1,21 +1,20 @@
-import { isDMChannel } from '@sapphire/discord.js-utilities';
 import type { PieceContext } from '@sapphire/pieces';
-import type { Channel, DMChannel } from 'discord.js';
-import type { ArgumentResult } from '../lib/structures/Argument';
-import { ExtendedArgument, ExtendedArgumentContext } from '../lib/structures/ExtendedArgument';
+import type { DMChannel } from 'discord.js';
+import { resolveDMChannel } from '../lib/resolvers';
+import { Argument, ArgumentContext, ArgumentResult } from '../lib/structures/Argument';
 
-export class CoreArgument extends ExtendedArgument<'channel', DMChannel> {
+export class CoreArgument extends Argument<DMChannel> {
 	public constructor(context: PieceContext) {
-		super(context, { baseArgument: 'channel', name: 'dmChannel' });
+		super(context, { name: 'dmChannel' });
 	}
 
-	public handle(channel: Channel, context: ExtendedArgumentContext): ArgumentResult<DMChannel> {
-		return isDMChannel(channel)
-			? this.ok(channel)
-			: this.error({
-					parameter: context.parameter,
-					message: 'The argument did not resolve to a DM channel.',
-					context: { ...context, channel }
-			  });
+	public run(parameter: string, context: ArgumentContext): ArgumentResult<DMChannel> {
+		const resolved = resolveDMChannel(parameter);
+		if (resolved.success) return this.ok(resolved.value);
+		return this.error({
+			parameter,
+			message: resolved.error,
+			context: { ...context, channel: resolved.value }
+		});
 	}
 }

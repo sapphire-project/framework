@@ -1,24 +1,20 @@
-import { isVoiceChannel } from '@sapphire/discord.js-utilities';
 import type { PieceContext } from '@sapphire/pieces';
-import type { GuildChannel, VoiceChannel } from 'discord.js';
-import type { ArgumentResult } from '../lib/structures/Argument';
-import { ExtendedArgument, ExtendedArgumentContext } from '../lib/structures/ExtendedArgument';
+import type { VoiceChannel } from 'discord.js';
+import { resolveVoiceChannel } from '../lib/resolvers';
+import { Argument, ArgumentContext, ArgumentResult } from '../lib/structures/Argument';
 
-export class CoreArgument extends ExtendedArgument<'guildChannel', VoiceChannel> {
+export class CoreArgument extends Argument<VoiceChannel> {
 	public constructor(context: PieceContext) {
-		super(context, {
-			name: 'voiceChannel',
-			baseArgument: 'guildChannel'
-		});
+		super(context, { name: 'voiceChannel' });
 	}
 
-	public handle(channel: GuildChannel, context: ExtendedArgumentContext): ArgumentResult<VoiceChannel> {
-		return isVoiceChannel(channel)
-			? this.ok(channel)
-			: this.error({
-					parameter: context.parameter,
-					message: 'The argument did not resolve to a voice channel.',
-					context: { ...context, channel }
-			  });
+	public run(parameter: string, context: ArgumentContext): ArgumentResult<VoiceChannel> {
+		const resolved = resolveVoiceChannel(parameter);
+		if (resolved.success) return this.ok(resolved.value);
+		return this.error({
+			parameter,
+			message: resolved.error,
+			context: { ...context, channel: resolved.value }
+		});
 	}
 }

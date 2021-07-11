@@ -1,24 +1,20 @@
-import { isNewsChannel } from '@sapphire/discord.js-utilities';
 import type { PieceContext } from '@sapphire/pieces';
-import type { GuildChannel, NewsChannel } from 'discord.js';
-import type { ArgumentResult } from '../lib/structures/Argument';
-import { ExtendedArgument, ExtendedArgumentContext } from '../lib/structures/ExtendedArgument';
+import type { NewsChannel } from 'discord.js';
+import { resolveNewsChannel } from '../lib/resolvers';
+import { Argument, ArgumentContext, ArgumentResult } from '../lib/structures/Argument';
 
-export class CoreArgument extends ExtendedArgument<'guildChannel', NewsChannel> {
+export class CoreArgument extends Argument<NewsChannel> {
 	public constructor(context: PieceContext) {
-		super(context, {
-			name: 'newsChannel',
-			baseArgument: 'guildChannel'
-		});
+		super(context, { name: 'newsChannel' });
 	}
 
-	public handle(channel: GuildChannel, context: ExtendedArgumentContext): ArgumentResult<NewsChannel> {
-		return isNewsChannel(channel)
-			? this.ok(channel)
-			: this.error({
-					parameter: context.parameter,
-					message: 'The argument did not resolve to a news channel.',
-					context: { ...context, channel }
-			  });
+	public run(parameter: string, context: ArgumentContext): ArgumentResult<NewsChannel> {
+		const resolved = resolveNewsChannel(parameter);
+		if (resolved.success) return this.ok(resolved.value);
+		return this.error({
+			parameter,
+			message: resolved.error,
+			context: { ...context, channel: resolved.value }
+		});
 	}
 }

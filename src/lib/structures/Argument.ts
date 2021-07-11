@@ -38,8 +38,16 @@ export interface IArgument<T> {
  * @example
  * ```typescript
  * // TypeScript:
- * import { Argument, ArgumentResult, PieceContext } from '@sapphire/framework';
+ * import { Argument, ArgumentResult, err, ok, PieceContext, Result } from '@sapphire/framework';
  * import { URL } from 'url';
+ *
+ * function resolveHyperlink(parameter: string): Result<URL, string> {
+ *   try {
+ *     return ok(new URL(parameter));
+ *   } catch {
+ *     return err('The argument did not resolve to a valid URL.');
+ *   }
+ * }
  *
  * // Define a class extending `Argument`, then export it.
  * // NOTE: You can use `export default` or `export =` too.
@@ -48,12 +56,10 @@ export interface IArgument<T> {
  *     super(context, { name: 'hyperlink', aliases: ['url'] });
  *   }
  *
- *   public run(argument: string): ArgumentResult<URL> {
- *     try {
- *       return this.ok(new URL(argument));
- *     } catch {
- *       return this.error(argument, 'ArgumentHyperlinkInvalidURL', 'The argument did not resolve to a valid URL.');
- *     }
+ *   public run(parameter: string): ArgumentResult<URL> {
+ *     const resolved = resolveHyperlink(parameter);
+ *     if (resolved.success) return this.ok(resolved.value);
+ *     return this.error({ parameter, message: resolved.error, context });
  *   }
  * }
  *
@@ -69,7 +75,15 @@ export interface IArgument<T> {
  * @example
  * ```javascript
  * // JavaScript:
- * const { Argument } = require('@sapphire/framework');
+ * const { Argument, err, ok } = require('@sapphire/framework');
+ *
+ * function resolveHyperlink(parameter) {
+ *   try {
+ *     return ok(new URL(parameter));
+ *   } catch {
+ *     return err('The argument did not resolve to a valid URL.');
+ *   }
+ * }
  *
  * // Define a class extending `Argument`, then export it.
  * module.exports = class CoreArgument extends Argument {
@@ -77,12 +91,10 @@ export interface IArgument<T> {
  *     super(context, { name: 'hyperlink', aliases: ['url'] });
  *   }
  *
- *   run(argument) {
- *     try {
- *       return this.ok(new URL(argument));
- *     } catch {
- *       return this.error(argument, 'ArgumentHyperlinkInvalidURL', 'The argument did not resolve to a valid URL.');
- *     }
+ *   run(parameter) {
+ *     const resolved = resolveHyperlink(parameter);
+ *     if (resolved.success) return this.ok(resolved.value);
+ *     return this.error(parameter, 'ArgumentHyperlinkInvalidURL', resolved.error);
  *   }
  * }
  * ```
